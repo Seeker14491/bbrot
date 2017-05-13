@@ -4,6 +4,7 @@
 * Resumable rendering
 * Ensure all cores are always in use; often cores finish their work before others, then sit idly
 * Support custom coloring
+* Use symmetry option
 * Proper benchmarking setup
 
 ### Arbitrary notes related to this library
