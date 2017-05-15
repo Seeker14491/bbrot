@@ -37,10 +37,12 @@ impl NonatomicBucketField {
             .iter()
             .map(|&x| cmp::min((x as f64 * factor).powi(2) as u32, u8::MAX as u32) as u8)
             .collect();
-        PngEncoder::new(try!(File::create(apply_extension(path, "png")))).encode(&pixels,
-                                                                                 self.width as u32,
-                                                                                 self.height as u32,
-                                                                                 ColorType::Gray(8))
+        PngEncoder::new(File::create(apply_extension(path, "png"))?).encode(
+            &pixels,
+            self.width as u32,
+            self.height as u32,
+            ColorType::Gray(8),
+        )
     }
 }
 

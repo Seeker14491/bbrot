@@ -20,16 +20,19 @@ fn run() -> Result<()> {
     let matches = App::new("Buddhabrot Generator")
         .about("Generates a png image of a Buddhabrot")
         .version(crate_version!())
-        .args_from_usage("<WIDTH> 'Width of rendering'
-     <HEIGHT> 'Height of rendering'
-     <POINTS> 'Minimum number of initial points to iterate'
-    ")
-        .arg(Arg::with_name("PRECISION")
-                 .short("p")
-                 .long("precision")
-                 .default_value("64")
-                 .possible_values(&["32", "64"])
-                 .help("Whether to use 32 or 64 bit floating point numbers"))
+        .args_from_usage(
+            "<WIDTH> 'Width of rendering'
+             <HEIGHT> 'Height of rendering'
+             <POINTS> 'Minimum number of initial points to iterate'"
+        )
+        .arg(
+            Arg::with_name("PRECISION")
+                .short("p")
+                .long("precision")
+                .default_value("64")
+                .possible_values(&["32", "64"])
+                .help("Whether to use 32 or 64 bit floating point numbers"),
+        )
         .arg_from_usage("<OUTPUT> 'File to save output to'")
         .get_matches();
 
