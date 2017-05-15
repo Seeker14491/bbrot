@@ -1,6 +1,8 @@
 # bbrot
 
-**bbrot** is a CLI [Buddhabrot](https://en.wikipedia.org/wiki/Buddhabrot) renderer. It renders to a png file. It currently has minimal options.
+**bbrot** is a CLI [Buddhabrot](https://en.wikipedia.org/wiki/Buddhabrot) renderer.
+
+It's currently very basic; it has minimal options and only supports rendering to a png file.
 
 ### Sample output
 
