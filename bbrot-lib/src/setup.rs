@@ -8,7 +8,7 @@ use std::marker::Sync;
 use std::path::Path;
 
 use bucket_field::{AtomicBucketField, NonatomicBucketField};
-use iteration_point;
+use path_iterator;
 use random_complex_generator;
 
 // TODO: `point_count_min` should be u64?
@@ -20,6 +20,7 @@ struct Buddhabrot<T> {
     yfocus: T, // default: 0.0
     scale: T, // factor to get from `math units` to pixels
     point_count_min: usize, // minimum number of initial points to iterate
+    max_iters_per_point: Option<u64>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -30,6 +31,7 @@ pub struct Setup<T> {
     yfocus: T,
     scale: Option<T>, // factor to get from `math units` to pixels
     point_count_min: usize, // minimum number of initial points to iterate
+    max_iters_per_point: Option<u64>,
 }
 
 impl<T> Buddhabrot<T>
@@ -50,7 +52,7 @@ where
                             move || {
                                 let mut cgen = random_complex_generator::make();
                                 for _ in 0..((self.point_count_min + cpu_count - 1) / cpu_count) {
-                                    for mut c in iteration_point::iterate(cgen()) {
+                                    for mut c in path_iterator::iterate(cgen(), self.max_iters_per_point) {
                                         c.re = c.re - self.xfocus +
                                                (T::from_usize(self.width).unwrap() /
                                                 (self.scale + self.scale));
@@ -83,8 +85,12 @@ impl<T> Setup<T>
 where
     T: 'static + Float + FromPrimitive + SampleRange + Sync,
 {
+    // TODO: enforce `width` and `height` bounds
+
     /// Sets the rendering dimensions to `width` and `height`, as well as `point_count_min`, which
     /// is a lower bound on the number of points to iterate.
+    ///
+    /// `width` and `height` must be greater than `0`.
     pub fn new(width: usize, height: usize, point_count_min: usize) -> Self {
         Setup {
             width: width,
@@ -93,6 +99,7 @@ where
             yfocus: T::from_f64(0.0).unwrap(),
             scale: None,
             point_count_min: point_count_min,
+            max_iters_per_point: None,
         }
     }
 
@@ -104,6 +111,17 @@ where
     /// If the scale isn't set with this function, a default scale is used.
     pub fn scale(&mut self, scale: T) {
         self.scale = Some(scale);
+    }
+
+    /// Sets the maximum number of iterations each starting point can undergo before abandoning
+    /// that point.
+    ///
+    /// A value of `None` means never abandon prematurely; the point will iterate until it either
+    /// escapes, or it is certain it will never escape.
+    ///
+    /// The default is `None`.
+    pub fn max_iters_per_point(&mut self, max_iters_per_point: Option<u64>) {
+        self.max_iters_per_point = max_iters_per_point;
     }
 
     /// Computes the Buddhabrot using the chosen settings, and saves the result to a png file at
@@ -127,6 +145,7 @@ where
             yfocus: self.yfocus,
             scale: scale,
             point_count_min: self.point_count_min,
+            max_iters_per_point: self.max_iters_per_point,
         }
     }
 }
