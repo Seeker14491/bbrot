@@ -10,5 +10,13 @@ where
     let mut rng = rand::weak_rng();
     let range =
         rand::distributions::Range::new(T::from_f64(-2.0).unwrap(), T::from_f64(2.0).unwrap());
-    move || Complex::new(range.ind_sample(&mut rng), range.ind_sample(&mut rng))
+
+    move || {
+        loop {
+            let candiate = Complex::new(range.ind_sample(&mut rng), range.ind_sample(&mut rng));
+            if candiate.norm_sqr() <= FromPrimitive::from_f64(4.0).unwrap() {
+                return candiate;
+            }
+        }
+    }
 }
