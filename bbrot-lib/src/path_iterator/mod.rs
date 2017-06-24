@@ -59,7 +59,8 @@ pub fn iterate<T: Float + FromPrimitive>(c: Complex<T>, max_iterations: Option<u
         }
         z = z * z + c;
     }
-    unreachable!()
+    
+	PathIterator::new(c, 0)
 }
 
 // Returns `true` if `c` lies within the cardioid of the Mandelbrot set.
