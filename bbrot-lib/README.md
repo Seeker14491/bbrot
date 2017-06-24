@@ -2,7 +2,6 @@
 
 * Be able to run indefinitely; stop when a signal is sent
 * Resumable rendering
-* Ensure all cores are always in use; often cores finish their work before others, then sit idly
 * Support custom coloring
 * Use symmetry option
 * Proper benchmarking setup

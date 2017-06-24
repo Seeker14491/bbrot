@@ -6,12 +6,12 @@ use std::cmp;
 use std::io;
 use std::marker::Sync;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use bucket_field::{AtomicBucketField, NonatomicBucketField};
 use path_iterator;
 use random_complex_generator;
 
-// TODO: `point_count_min` should be u64?
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct Buddhabrot<T> {
     width: usize,
@@ -19,7 +19,7 @@ struct Buddhabrot<T> {
     xfocus: T, // default: -0.7
     yfocus: T, // default: 0.0
     scale: T, // factor to get from `math units` to pixels
-    point_count_min: usize, // minimum number of initial points to iterate
+    point_count: u64, // number of initial points to iterate
     max_iters_per_point: Option<u64>,
 }
 
@@ -30,7 +30,7 @@ pub struct Setup<T> {
     xfocus: T,
     yfocus: T,
     scale: Option<T>, // factor to get from `math units` to pixels
-    point_count_min: usize, // minimum number of initial points to iterate
+    point_count: u64, // number of initial points to iterate
     max_iters_per_point: Option<u64>,
 }
 
@@ -39,19 +39,25 @@ where
     T: 'static + Float + FromPrimitive + SampleRange + Sync,
 {
     pub fn compute(&self) -> NonatomicBucketField {
-        let cpu_count = num_cpus::get();
-        let mut handles = Vec::with_capacity(cpu_count);
+        let cpu_count = num_cpus::get() as u64;
+        let mut handles = Vec::with_capacity(cpu_count as usize);
         let field = AtomicBucketField::new(self.width, self.height);
+        let points_done = AtomicU64::new(0);
 
         crossbeam::scope(
             |scope| {
                 let field = &field;
+                let points_done = &points_done;
                 for _ in 0..cpu_count {
                     handles.push(
                         scope.spawn(
                             move || {
                                 let mut cgen = random_complex_generator::make();
-                                for _ in 0..((self.point_count_min + cpu_count - 1) / cpu_count) {
+                                loop {
+                                    if points_done.fetch_add(1, Ordering::Relaxed) >= self.point_count {
+                                        break;
+                                    }
+
                                     for mut c in path_iterator::iterate(cgen(), self.max_iters_per_point) {
                                         c.re = c.re - self.xfocus +
                                                (T::from_usize(self.width).unwrap() /
@@ -87,18 +93,18 @@ where
 {
     // TODO: enforce `width` and `height` bounds
 
-    /// Sets the rendering dimensions to `width` and `height`, as well as `point_count_min`, which
-    /// is a lower bound on the number of points to iterate.
+    /// Sets the rendering dimensions to `width` and `height`, as well as `point_count`, the number
+    /// of points to iterate.
     ///
     /// `width` and `height` must be greater than `0`.
-    pub fn new(width: usize, height: usize, point_count_min: usize) -> Self {
+    pub fn new(width: usize, height: usize, point_count: u64) -> Self {
         Setup {
             width: width,
             height: height,
             xfocus: T::from_f64(-0.7).unwrap(),
             yfocus: T::from_f64(0.0).unwrap(),
             scale: None,
-            point_count_min: point_count_min,
+            point_count: point_count,
             max_iters_per_point: None,
         }
     }
@@ -144,7 +150,7 @@ where
             xfocus: self.xfocus,
             yfocus: self.yfocus,
             scale: scale,
-            point_count_min: self.point_count_min,
+            point_count: self.point_count,
             max_iters_per_point: self.max_iters_per_point,
         }
     }

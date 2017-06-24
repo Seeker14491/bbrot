@@ -37,10 +37,11 @@ fn run() -> Result<()> {
         .get_matches();
 
     let read_usize_arg = |arg| value_t!(matches.value_of(arg), usize).unwrap_or_else(|e| e.exit());
+	let read_u64_arg = |arg| value_t!(matches.value_of(arg), u64).unwrap_or_else(|e| e.exit());
 
     let width = read_usize_arg("WIDTH");
     let height = read_usize_arg("HEIGHT");
-    let points = read_usize_arg("POINTS");
+    let points = read_u64_arg("POINTS");
     let output = matches.value_of("OUTPUT").unwrap();
 
     match matches.value_of("PRECISION").unwrap() {
